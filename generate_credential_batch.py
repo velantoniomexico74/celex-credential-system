@@ -1,5 +1,4 @@
 # CELEX Credential System
-# Versionado con Git - Enfoque SRE
 # Ing. Jose Antonio Velazquez
 
 import sqlite3
