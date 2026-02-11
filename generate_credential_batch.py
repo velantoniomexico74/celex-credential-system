@@ -1,3 +1,7 @@
+# CELEX Credential System
+# Versionado con Git - Enfoque SRE
+# Ing. Jose Antonio Velazquez
+
 import sqlite3
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 import os
