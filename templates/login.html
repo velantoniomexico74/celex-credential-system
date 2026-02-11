@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login CELEX</title>
+</head>
+<body>
+
+<h2 style="text-align:center">Acceso al Sistema</h2>
+
+<form method="POST" style="text-align:center">
+    Usuario: <input type="text" name="username"><br><br>
+    Contraseña: <input type="password" name="password"><br><br>
+    <button type="submit">Entrar</button>
+
+    {% if error %}
+    <p style="color:red">{{ error }}</p>
+    {% endif %}
+</form>
+
+</body>
+</html>
+
+

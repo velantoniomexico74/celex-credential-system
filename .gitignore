@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environment
+venv/
+
+# Base de datos
+celex.db
+
+# Archivos generados
+credenciales/
+fotos/
+uploads/
+layouts/
+
+# Logs
+*.log
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Backups
+*.tar.gz

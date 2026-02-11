@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Reporte de Calificaciones</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+
+        /* ENCABEZADO */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .header img {
+            width: 120px;
+            height: auto;
+        }
+
+        .header .title-block {
+            text-align: center;
+            width: 100%;
+        }
+
+        .header h2 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        /* TABLA */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #444;
+            padding: 10px;
+            text-align: left;
+            font-size: 16px;
+        }
+
+        th {
+            background-color: #f0f0f0;
+            text-align: center;
+        }
+
+        /* PIE DE PÁGINA */
+        .footer {
+            position: fixed;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 14px;
+            color: #333;
+        }
+
+        /* MODO IMPRESIÓN */
+        @media print {
+            .no-print {
+                display: none;
+            }
+
+            body {
+                margin: 10mm;
+            }
+
+            .footer {
+                position: fixed;
+                bottom: 10mm;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- BOTÓN SOLO PARA PANTALLA -->
+<div class="no-print" style="text-align:right; margin-bottom:20px;">
+    <button onclick="window.print()" style="padding:10px; font-size:16px;">🖨 Imprimir</button>
+</div>
+
+<!-- ENCABEZADO -->
+<div class="header">
+    <img src="/static/logo_ipn.png" alt="Logo Izquierdo">
+
+    <div class="title-block">
+        <h2>Instituto Politécnico Nacional-Centro de Estudios Científicos y Tecnológicos. Narciso Bassols</h2>
+        <h3>Centro de Lenguas Extranjeras – CELEX</h3>
+        <h2 style="margin-top:15px;">Reporte de Calificaciones</h2>
+    </div>
+
+    <img src="/static/logo_celex.png" alt="Logo Derecho">
+</div>
+
+<!-- TABLA -->
+<table>
+    <tr>
+        <th>Alumno</th>
+        <th>Calificación</th>
+    </tr>
+
+    {% for row in data %}
+    <tr>
+        <td>{{ row[0] }}</td>
+        <td style="text-align:center;">{{ row[1] }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<!-- PIE DE PÁGINA -->
+<div class="footer">
+    CECyT 8 – CELEX<br>
+    Fecha de impresión: {{ fecha }}
+</div>
+
+</body>
+</html>
