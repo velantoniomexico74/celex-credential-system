@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Credencialización CELEX</title>
+</head>
+<body>
+    <h2>Generar Credenciales CELEX</h2>
+
+    <form method="POST" enctype="multipart/form-data">
+        <label>Subir Excel:</label><br>
+        <input type="file" name="excel" required><br><br>
+
+        <label>Subir Fotos (múltiples):</label><br>
+        <input type="file" name="fotos" multiple required><br><br>
+
+        <button type="submit">Generar Credenciales</button>
+    </form>
+
+    <br>
+    <a href="/logout">Cerrar sesión</a>
+</body>
+</html>

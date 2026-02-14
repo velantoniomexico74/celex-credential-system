@@ -1,152 +1,167 @@
-from flask import Flask, render_template, request, redirect, session, jsonify, send_file
-from flask_socketio import SocketIO
+from flask import Flask, render_template, request, redirect, session, send_file
 import sqlite3
 import pandas as pd
 from werkzeug.utils import secure_filename
 import os
+import re
+import zipfile
+#from generate_credential_batch import generar_credenciales
+from generate_credential_batch import generar_credenciales, generar_credencial_individual
+
+
 
 app = Flask(__name__)
 app.secret_key = "CELEX2025"
-socketio = SocketIO(app)
 
-# --- UPLOADS ----
+# ---- CARPETAS ----
 UPLOAD_FOLDER = "uploads"
+FOTOS_FOLDER = "fotos"
+CRED_FOLDER = "credenciales"
+
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+os.makedirs(FOTOS_FOLDER, exist_ok=True)
+os.makedirs(CRED_FOLDER, exist_ok=True)
 
-
-# ---- DB CONNECTION ----
-def get_db():
-    return sqlite3.connect("grades.db")
-
-
-# ---- LOGIN ----
+# ---- LOGIN SIMPLE ----
 @app.route("/", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
-        user = cur.fetchone()
-        conn.close()
-
-        if user:
-            session["user"] = username
-            return redirect("/home")
-
-        return render_template("login.html", error="Usuario o contraseña incorrectos")
-
+        if request.form["username"] == "admin" and request.form["password"] == "celex":
+            session["user"] = "admin"
+            return redirect("/credencializacion")
+        return render_template("login.html", error="Credenciales incorrectas")
     return render_template("login.html")
 
 
-# ---- HOME ----
-@app.route("/home")
-def home():
+# ---- CREDENCIALIZACION ----
+@app.route("/credencializacion", methods=["GET", "POST"])
+def credencializacion():
+
     if "user" not in session:
         return redirect("/")
 
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("""
-        SELECT students.id, students.name, COALESCE(grades.grade, '')
-        FROM students
-        LEFT JOIN grades ON students.id = grades.student_id
-    """)
-    students = cur.fetchall()
-    conn.close()
-
-    return render_template("index.html", students=students)
-
-
-# ---- SAVE GRADES ----
-@app.route("/save", methods=["POST"])
-def save():
-    data = request.get_json()
-    conn = get_db()
-    cur = conn.cursor()
-
-    for row in data:
-        cur.execute("INSERT OR REPLACE INTO grades (student_id, grade) VALUES (?,?)",
-                    (row["id"], row["grade"]))
-
-    conn.commit()
-    conn.close()
-
-    return "OK"
-
-
-# ---- EXPORT TO EXCEL ----
-@app.route("/export/excel")
-def export_excel():
-    conn = get_db()
-    df = pd.read_sql_query("""
-        SELECT s.name AS Alumno, COALESCE(g.grade,'') AS Calificación
-        FROM students s
-        LEFT JOIN grades g ON s.id = g.student_id
-    """, conn)
-    conn.close()
-
-    filename = "calificaciones.xlsx"
-    df.to_excel(filename, index=False)
-
-    return send_file(filename, as_attachment=True)
-
-
-# ---- PRINT VIEW ----
-@app.route("/print")
-def print_view():
-    import datetime
-    fecha = datetime.datetime.now().strftime("%d/%m/%Y")
-
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("""
-        SELECT students.name, COALESCE(grades.grade, '')
-        FROM students
-        LEFT JOIN grades ON students.id = grades.student_id
-    """)
-    records = cur.fetchall()
-
-    return render_template("print.html", data=records, fecha=fecha)
-
-
-# ---- UPLOAD STUDENTS FROM EXCEL ----
-@app.route("/upload-students", methods=["GET", "POST"])
-def upload_students():
     if request.method == "POST":
-        if "file" not in request.files:
-            return "No se envió archivo", 400
 
-        file = request.files["file"]
+        # ===============================
+        # 1️⃣ LIMPIAR TABLA alumnos
+        # ===============================
+        conn = sqlite3.connect("celex.db")
+        cur = conn.cursor()
+        cur.execute("DELETE FROM alumnos")
+        conn.commit()
+        conn.close()
 
-        if file.filename == "":
-            return "Archivo vacío", 400
+        # ===============================
+        # 2️⃣ GUARDAR E IMPORTAR EXCEL
+        # ===============================
+        excel = request.files["excel"]
+        excel_path = os.path.join(UPLOAD_FOLDER, secure_filename(excel.filename))
+        excel.save(excel_path)
 
-        filename = secure_filename(file.filename)
-        path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-        file.save(path)
+        df = pd.read_excel(excel_path)
 
-        df = pd.read_excel(path)
+        # 🔹 Limpiar espacios invisibles en encabezados
+        df.columns = df.columns.str.strip()
 
-        if "Nombre" not in df.columns:
-            return "ERROR: El Excel debe contener una columna llamada 'Nombre'", 400
+        df = df.rename(columns={
+        "Nombre(s)": "Nombres"
+        })
 
-        conn = get_db()
+
+        print("COLUMNAS DETECTADAS:")
+        print(df.columns.tolist())
+
+        conn = sqlite3.connect("celex.db")
         cur = conn.cursor()
 
-        for name in df["Nombre"]:
-            cur.execute("INSERT INTO students (name) VALUES (?)", (name,))
+        for _, row in df.iterrows():
+            cur.execute("""
+                INSERT INTO alumnos (
+                    apellido_paterno,
+                    apellido_materno,
+                    nombres,
+                    matricula,
+                    nivel_academico,
+                    turno_celex,
+                    no_foto
+                ) VALUES (?,?,?,?,?,?,?)
+            """, (
+                row["Apellido Paterno"],
+                row["Apellido Materno"],
+                #row["Nombre(s)"],
+                row["Nombres"],
+                row["Matricula"],
+                row["Nivel Académico"],
+                row["Turno CELEX"],
+                row["No. foto"]
+            ))
 
         conn.commit()
         conn.close()
 
-        return "Alumnos cargados correctamente."
+        os.remove(excel_path)
 
-    return render_template("upload_students.html")
+        # ===============================
+        # 3️⃣ LIMPIAR FOTOS
+        # ===============================
+        for f in os.listdir(FOTOS_FOLDER):
+            os.remove(os.path.join(FOTOS_FOLDER, f))
 
+        # ===============================
+        # 4️⃣ RENOMBRAR FOTOS AUTOMATICAMENTE
+        # ===============================
+        fotos = request.files.getlist("fotos")
+
+        for foto in fotos:
+            filename = secure_filename(foto.filename)
+            match = re.search(r"\d+", filename)
+
+            if match:
+                numero = match.group()
+                new_name = f"{numero}.jpg"
+                foto.save(os.path.join(FOTOS_FOLDER, new_name))
+
+        # ===============================
+        # 5️⃣ LIMPIAR CREDENCIALES
+        # ===============================
+        for f in os.listdir(CRED_FOLDER):
+            os.remove(os.path.join(CRED_FOLDER, f))
+
+        # ===============================
+        # 6️⃣ GENERAR CREDENCIALES
+        # ===============================
+        generar_credenciales()
+
+        # ===============================
+        # 7️⃣ CREAR ZIP
+        # ===============================
+        zip_path = "credenciales.zip"
+
+        with zipfile.ZipFile(zip_path, "w") as zipf:
+            for file in os.listdir(CRED_FOLDER):
+                zipf.write(os.path.join(CRED_FOLDER, file), file)
+
+        return send_file(zip_path, as_attachment=True)
+
+    return render_template("credencializacion.html")
+
+@app.route("/reimprimir", methods=["GET", "POST"])
+def reimprimir():
+
+    if "user" not in session:
+        return redirect("/")
+
+    if request.method == "POST":
+        matricula = request.form["matricula"]
+
+        archivo = generar_credencial_individual(matricula)
+
+        if not archivo:
+            return render_template("reimprimir.html", error="Matrícula no encontrada o sin foto.")
+
+        return send_file(archivo, as_attachment=True)
+
+    return render_template("reimprimir.html")
 
 # ---- LOGOUT ----
 @app.route("/logout")
@@ -155,6 +170,5 @@ def logout():
     return redirect("/")
 
 
-# ---- RUN ----
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=5000, debug=False)
