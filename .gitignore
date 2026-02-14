@@ -1,7 +1,22 @@
-venv/
-uploads/
-fotos/
-credenciales/
-*.zip
-*.db
+# Python
 __pycache__/
+*.pyc
+
+# Base de datos
+*.db
+
+# Credenciales generadas
+output/
+credenciales/
+
+# Logs
+logs/
+*.log
+
+# Backups
+backups/
+*.tar.gz
+
+# Entornos virtuales
+venv/
+.env
