@@ -1,19 +1,142 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Login CELEX</title>
-</head>
-<body>
-    <h2>Login</h2>
+    <title>Acceso Sistema CELEX</title>
 
-    <form method="POST">
-        <input type="text" name="username" placeholder="Usuario" required><br><br>
-        <input type="password" name="password" placeholder="Contraseña" required><br><br>
-        <button type="submit">Entrar</button>
-    </form>
+    <style>
+        body {
+            font-family: Arial;
+            background-color: #f4f4f4;
+            margin: 0;
+        }
+
+        .header {
+            background-color: #6A0032;
+            color: white;
+            text-align: center;
+            padding: 30px 0 15px 0;
+        }
+
+        .logos {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            margin-bottom: 15px;
+        }
+
+        .logos img {
+            width: 150px;
+            height: 150px;
+            object-fit: contain;
+            background: white;
+            padding: 8px;
+            border-radius: 10px;
+        }
+
+        h1 {
+            margin: 5px;
+            font-size: 22px;
+        }
+
+        h2 {
+            margin: 0;
+            font-size: 16px;
+            color: #C9A227;
+            font-weight: normal;
+        }
+
+        .login-box {
+            width: 380px;
+            margin: 70px auto;
+            background: white;
+            padding: 35px;
+            border-radius: 12px;
+            box-shadow: 0px 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .login-box h3 {
+            text-align: center;
+            color: #6A0032;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #6A0032;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #4E0024;
+        }
+
+        .error {
+            color: red;
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .footer {
+            background-color: #6A0032;
+            color: white;
+            text-align: center;
+            padding: 12px;
+            margin-top: 60px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="logos">
+        <img src="{{ url_for('static', filename='logo_cecyt8.png') }}" alt="Logo CECYT 8">
+        <img src="{{ url_for('static', filename='logo_celex.png') }}" alt="Logo CELEX">
+    </div>
+
+    <h1>Centro de Estudios Científicos y Tecnológicos Num. 8</h1>
+    <h2>Narciso Bassols</h2>
+
+</div>
+
+<div class="login-box">
+
+    <h3>Acceso al Sistema CELEX</h3>
 
     {% if error %}
-        <p style="color:red">{{ error }}</p>
+        <div class="error">{{ error }}</div>
     {% endif %}
+
+    <form method="POST">
+        <label>Usuario:</label>
+        <input type="text" name="username" required>
+
+        <label>Contraseña:</label>
+        <input type="password" name="password" required>
+
+        <button type="submit">Ingresar</button>
+    </form>
+
+</div>
+
+<div class="footer">
+    Ing. JAVS-UDI
+</div>
+
 </body>
 </html>

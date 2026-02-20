@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Panel Principal CELEX</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background-color: #f4f4f4;
+            margin: 0;
+        }
+
+        .header {
+            background-color: #6A0032;
+            color: white;
+            text-align: center;
+            padding: 30px 0 10px 0;
+        }
+
+        .logos {
+            display: flex;
+            justify-content: center;
+            gap: 80px;
+            margin-bottom: 20px;
+        }
+
+        .logos img {
+            width: 180px;
+            height: 180px;
+            object-fit: contain;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+        }
+
+        h1 {
+            margin: 5px;
+        }
+
+        h2 {
+            margin: 0;
+            color: #C9A227;
+            font-weight: normal;
+        }
+
+        .menu {
+            width: 450px;
+            margin: 80px auto;
+        }
+
+        .menu button {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: #6A0032;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .menu button:hover {
+            background-color: #4E0024;
+        }
+
+        .secondary {
+            background-color: #C9A227 !important;
+            color: #6A0032 !important;
+        }
+
+        .secondary:hover {
+            background-color: #a8841c !important;
+        }
+
+        .footer {
+            background-color: #6A0032;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            margin-top: 120px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="logos">
+        <img src="{{ url_for('static', filename='logo_cecyt8.png') }}" alt="Logo CECYT 8">
+        <img src="{{ url_for('static', filename='logo_celex.png') }}" alt="Logo CELEX">
+    </div>
+
+    <h1>Centro de Estudios Científicos y Tecnológicos Num. 8</h1>
+    <h2>Narciso Bassols</h2>
+
+</div>
+
+<div class="menu">
+    <a href="/credenciales">
+        <button>1. Generación y Reimpresión de Credenciales</button>
+    </a>
+
+    <button disabled>2. Gestión de Alumnos (Próximamente)</button>
+    <button disabled>3. Reportes / Administración (Próximamente)</button>
+
+    <br>
+    <a href="/logout">
+        <button class="secondary">Cerrar sesión</button>
+    </a>
+</div>
+
+<div class="footer">
+    Ing. JAVS-UDI
+</div>
+
+</body>
+</html>
