@@ -20,3 +20,5 @@ backups/
 # Entornos virtuales
 venv/
 .env
+.ipynb_checkpoints/
+fotos/
