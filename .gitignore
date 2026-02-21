@@ -22,3 +22,4 @@ venv/
 .env
 .ipynb_checkpoints/
 fotos/
+*.zip
