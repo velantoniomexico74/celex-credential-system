@@ -1,14 +1,42 @@
-from flask import Flask, render_template, request, redirect, session, send_file
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
-import pandas as pd
-from werkzeug.utils import secure_filename
 import os
-import re
-import zipfile
-from generate_credential_batch import generar_credenciales, generar_credencial_individual
+
+
+from flask import Flask, render_template, request, redirect, url_for, session
+import sqlite3
+import os
+
+# 🔹 AQUÍ puedes poner constantes
+ROLES_VALIDOS = ["admin", "operador", "profesor"]
+
+# 🔹 AQUÍ va la función requiere_rol
+def requiere_rol(*roles):
+    from functools import wraps
+    def wrapper(func):
+        @wraps(func)
+        def decorated(*args, **kwargs):
+            if "user" not in session:
+                return redirect(url_for("login"))
+            if session.get("role") not in roles:
+                return "No autorizado", 403
+            return func(*args, **kwargs)
+        return decorated
+    return wrapper
 
 app = Flask(__name__)
-app.secret_key = "CELEX2025"
+app.secret_key = "celex_secret_key"
+
+# ===============================
+# RUTAS
+# ===============================
+
+
+
+
+app = Flask(__name__)
+app.secret_key = "celex_secret_key"
 
 # ===============================
 # CARPETAS
@@ -24,134 +52,46 @@ os.makedirs(CRED_FOLDER, exist_ok=True)
 # ===============================
 # LOGIN
 # ===============================
+
 @app.route("/", methods=["GET", "POST"])
 def login():
+
     if request.method == "POST":
-        if request.form["username"] == "admin" and request.form["password"] == "celex":
-            session["user"] = "admin"
-            return redirect("/dashboard")
-        return render_template("login.html", error="Credenciales incorrectas")
+        username = request.form["username"]
+        password = request.form["password"]
+
+        conn = sqlite3.connect("celex.db")
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM usuarios WHERE username = ?", (username,))
+        user = cur.fetchone()
+        conn.close()
+
+        if user and check_password_hash(user[2], password):
+            session["user"] = username
+            session["role"] = user[3]
+            return redirect(url_for("dashboard"))
+
+
+    #    if user and check_password_hash(user[2], password):
+    #        session["user"] = username
+    #        return redirect(url_for("dashboard"))
+        else:
+            return render_template("login.html", error="Credenciales incorrectas")
+
     return render_template("login.html")
+
 
 # ===============================
 # DASHBOARD
 # ===============================
 @app.route("/dashboard")
 def dashboard():
-    if "user" not in session:
-        return redirect("/")
-    return render_template("dashboard.html")
-
-# ===============================
-# MÓDULO CREDENCIALES
-# ===============================
-@app.route("/credenciales", methods=["GET", "POST"])
-def credenciales():
 
     if "user" not in session:
-        return redirect("/")
+        return redirect(url_for("login"))
 
-    # ---------------------------------
-    # GENERACIÓN MASIVA
-    # ---------------------------------
-    if request.method == "POST" and "excel" in request.files:
+    return render_template("dashboard.html", user=session["user"])
 
-        # 1️⃣ Limpiar tabla alumnos
-        conn = sqlite3.connect("celex.db")
-        cur = conn.cursor()
-        cur.execute("DELETE FROM alumnos")
-        conn.commit()
-        conn.close()
-
-        # 2️⃣ Guardar Excel
-        excel = request.files["excel"]
-        excel_path = os.path.join(UPLOAD_FOLDER, secure_filename(excel.filename))
-        excel.save(excel_path)
-
-        df = pd.read_excel(excel_path)
-        df.columns = df.columns.str.strip()
-
-        df = df.rename(columns={
-            "Nombre(s)": "Nombres"
-        })
-
-        conn = sqlite3.connect("celex.db")
-        cur = conn.cursor()
-
-        for _, row in df.iterrows():
-            cur.execute("""
-                INSERT INTO alumnos (
-                    apellido_paterno,
-                    apellido_materno,
-                    nombres,
-                    matricula,
-                    nivel_academico,
-                    turno_celex,
-                    no_foto
-                ) VALUES (?,?,?,?,?,?,?)
-            """, (
-                row["Apellido Paterno"],
-                row["Apellido Materno"],
-                row["Nombres"],
-                row["Matricula"],
-                row["Nivel Académico"],
-                row["Turno CELEX"],
-                row["No. foto"]
-            ))
-
-        conn.commit()
-        conn.close()
-        os.remove(excel_path)
-
-        # 3️⃣ Limpiar fotos
-        for f in os.listdir(FOTOS_FOLDER):
-            os.remove(os.path.join(FOTOS_FOLDER, f))
-
-        # 4️⃣ Guardar fotos
-        fotos = request.files.getlist("fotos")
-
-        for foto in fotos:
-            filename = secure_filename(foto.filename)
-            match = re.search(r"\d+", filename)
-
-            if match:
-                numero = match.group()
-                new_name = f"{numero}.jpg"
-                foto.save(os.path.join(FOTOS_FOLDER, new_name))
-
-        # 5️⃣ Limpiar credenciales previas
-        for f in os.listdir(CRED_FOLDER):
-            os.remove(os.path.join(CRED_FOLDER, f))
-
-        # 6️⃣ Generar credenciales
-        generar_credenciales()
-
-        # 7️⃣ Crear ZIP
-        zip_path = "credenciales.zip"
-
-        with zipfile.ZipFile(zip_path, "w") as zipf:
-            for file in os.listdir(CRED_FOLDER):
-                zipf.write(os.path.join(CRED_FOLDER, file), file)
-
-        return send_file(zip_path, as_attachment=True)
-
-    # ---------------------------------
-    # REIMPRESIÓN INDIVIDUAL
-    # ---------------------------------
-    if request.method == "POST" and "matricula" in request.form:
-
-        matricula = request.form["matricula"]
-        archivo = generar_credencial_individual(matricula)
-
-        if not archivo:
-            return render_template(
-                "credenciales.html",
-                error="Matrícula no encontrada o sin foto."
-            )
-
-        return send_file(archivo, as_attachment=True)
-
-    return render_template("credenciales.html")
 
 # ===============================
 # LOGOUT
@@ -159,10 +99,11 @@ def credenciales():
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect("/")
+    return redirect(url_for("login"))
+
 
 # ===============================
 # MAIN
 # ===============================
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=5000)
