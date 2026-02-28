@@ -69,6 +69,22 @@ def credenciales():
 
     if request.method == "POST":
 
+        # ==========================
+        # REIMPRESIÓN INDIVIDUAL
+        # ==========================
+        if "matricula" in request.form and "excel" not in request.files:
+            matricula = request.form["matricula"].strip()
+
+            ruta_credencial = os.path.join(CRED_FOLDER, f"{matricula}.png")
+
+            if os.path.exists(ruta_credencial):
+                return send_file(ruta_credencial, as_attachment=True)
+            else:
+                return render_template("credenciales.html", error="Credencial no encontrada.")
+
+
+
+
         conn = sqlite3.connect(DB_NAME)
         cur = conn.cursor()
 
